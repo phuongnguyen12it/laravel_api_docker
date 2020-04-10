@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  # App Service
+  app-p:
+    container_name: app-p
+    build:
+      context: .
+      dockerfile: .cloud/docker/Dockerfile
+    image: app-p
+    depends_on:
+      - mysql-p
+    volumes:
+      - ../src:/var/www
+      - .cloud/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    # This is the fix
+    networks:
+      - php-nginx
+
+  mysql-p:
+      image: mysql:8
+      container_name: mysql-p
+      volumes:
+          - dbdata-p:/var/lib/mysql
+      ports:
+        - "33062:3306"
+      environment:
+        - MYSQL_ROOT_PASSWORD=123
+        - MYSQL_DATABASE=user-db
+      # This is the fix
+      networks:
+      - php-nginx
+  # Nginx Service
+  nginx-p:
+    container_name: nginx-p
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .cloud/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../src:/var/www
+    depends_on:
+      - app-p
+    # This is the fix
+    networks:
+      - php-nginx
+
+volumes:
+  dbdata-p:
+    driver: local
+# This is the fix
+networks:
+  php-nginx:
